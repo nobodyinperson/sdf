@@ -136,19 +136,28 @@ def modulate_between(sdf, a, b, e=ease.in_out_cubic):
     return f
 
 
-def stretch(sdf, a, b, e=ease.linear):
+def stretch(sdf, a, b, e=ease.linear, k=None):
     """
     Grab the object at point ``a`` and stretch the entire plane to ``b``.
 
     Args:
         a, b (point vectors): the control points
+        k (pos float or None): not the usual k, here it limits the
+            surrounding positions around a and b that can be reached
+            during stretching. Use this if stretching results
+            in weird parts missing.
     """
     ab = (ab := b - a) / (L := np.linalg.norm(ab))
+    if k is not None:
+        k_ = k / L
 
     def f(p):
         # s = ”how far are we between a and b as fraction?”
         s = np.clip((p - a) @ ab / L, 0, 1)
-        return sdf(p - (e(s) * L * ab[:, np.newaxis]).T)
+        s_ = e(s)
+        if k is not None:
+            s_ = np.clip(s, s - k_, s + k_)
+        return sdf(p - (s_ * L * ab[:, np.newaxis]).T)
 
     return f
 
