@@ -327,6 +327,22 @@ class SDF3:
         return mesh.show_slice(self, *args, **kwargs)
 
 
+def cached(decorated_fun):
+    cache = dict()
+
+    @functools.wraps(decorated_fun)
+    def wrapper(*args, **kwargs):
+        # TODO: That's not good, different np.arrays of same content won't hit the cache
+        key = tuple(args) + tuple(kwargs.items())
+        try:
+            return cache[key]
+        except KeyError:
+            cache[key] = (result := decorated_fun(*args, **kwargs))
+            return result
+
+    return wrapper
+
+
 def sdf3(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
